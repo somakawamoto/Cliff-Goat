@@ -2,7 +2,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const nextCanvas = document.getElementById("nextGoat");
 const nextCtx = nextCanvas.getContext("2d");
-const ASSET_VERSION = "20260430-2";
+const ASSET_VERSION = "20260430-3";
 const goatImage = new Image();
 const goatSound = new Audio(`assets/goat_sound.mp3?v=${ASSET_VERSION}`);
 goatSound.preload = "auto";
@@ -1009,8 +1009,9 @@ function drawMessage() {
   ctx.lineWidth = 8;
   ctx.strokeStyle = "rgba(0,0,0,0.7)";
   ctx.fillStyle = "#ffe349";
-  ctx.strokeText(state.message, state.w / 2, state.h * 0.18);
-  ctx.fillText(state.message, state.w / 2, state.h * 0.18);
+  const messageY = state.h * (isCompactView() ? 0.28 : 0.26);
+  ctx.strokeText(state.message, state.w / 2, messageY);
+  ctx.fillText(state.message, state.w / 2, messageY);
   ctx.restore();
 }
 
@@ -1074,6 +1075,15 @@ canvas.addEventListener("pointerup", (event) => {
   fire();
 });
 canvas.addEventListener("pointercancel", fire);
+canvas.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
+canvas.addEventListener("touchstart", (event) => {
+  event.preventDefault();
+}, { passive: false });
+canvas.addEventListener("touchmove", (event) => {
+  event.preventDefault();
+}, { passive: false });
 window.addEventListener("keydown", (event) => {
   if (event.code === "Space") {
     event.preventDefault();
