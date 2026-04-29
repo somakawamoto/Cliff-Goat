@@ -2,7 +2,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const nextCanvas = document.getElementById("nextGoat");
 const nextCtx = nextCanvas.getContext("2d");
-const ASSET_VERSION = "20260430-1";
+const ASSET_VERSION = "20260430-2";
 const goatImage = new Image();
 const goatSound = new Audio(`assets/goat_sound.mp3?v=${ASSET_VERSION}`);
 goatSound.preload = "auto";
@@ -50,6 +50,10 @@ const STORAGE_KEY = "cliff-goat-best";
 
 let audioContext = null;
 let bgmStarted = false;
+
+function isCompactView() {
+  return state.w <= 760;
+}
 
 function audio() {
   if (!audioContext) {
@@ -359,9 +363,9 @@ function makeCliff() {
   const w = state.w;
   const h = state.h;
   const top = h * 0.02;
-  const bottom = h * 0.88;
-  const leftBase = w * 0.08;
-  const rightBase = w * 0.94;
+  const bottom = h * (isCompactView() ? 0.82 : 0.88);
+  const leftBase = w * (isCompactView() ? 0.03 : 0.08);
+  const rightBase = w * (isCompactView() ? 0.98 : 0.94);
   const points = [];
   const steps = 16;
   for (let i = 0; i <= steps; i++) {
@@ -400,11 +404,11 @@ function pointInPolygon(x, y, points) {
 }
 
 function cannon() {
-  return { x: state.w * 0.5, y: state.h * 0.86 };
+  return { x: state.w * 0.5, y: state.h * (isCompactView() ? 0.84 : 0.86) };
 }
 
 function cannonImageSize() {
-  const cannonH = Math.min(230, state.h * 0.27);
+  const cannonH = Math.min(isCompactView() ? 165 : 230, state.h * (isCompactView() ? 0.22 : 0.27));
   const aspect = cannonImageReady ? cannonImage.width / cannonImage.height : 1024 / 1536;
   return { w: cannonH * aspect, h: cannonH };
 }
@@ -559,7 +563,7 @@ function update(dt) {
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     p.rot += p.goat.spin * dt;
-    const collisionArmed = p.age > 0.18 && p.y < state.h * 0.78;
+    const collisionArmed = p.age > 0.18 && p.y < state.h * (isCompactView() ? 0.73 : 0.78);
     const flewTooFar = p.y < -160 || p.x < -160 || p.x > state.w + 160;
     if (flewTooFar) {
       failGoat("飛びすぎて落下");
@@ -881,10 +885,12 @@ function drawAim() {
   ctx.lineTo(endX, endY);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.font = "900 28px system-ui";
-  ctx.fillText("角度", c.x + 45, c.y - 132);
-  ctx.font = "900 40px system-ui";
-  ctx.fillText(`${Math.round(180 - (state.angle * 180) / Math.PI)}°`, c.x + 45, c.y - 92);
+  const angleLabelX = isCompactView() ? c.x + 30 : c.x + 45;
+  const angleLabelY = isCompactView() ? c.y - 96 : c.y - 132;
+  ctx.font = `900 ${isCompactView() ? 18 : 28}px system-ui`;
+  ctx.fillText("角度", angleLabelX, angleLabelY);
+  ctx.font = `900 ${isCompactView() ? 28 : 40}px system-ui`;
+  ctx.fillText(`${Math.round(180 - (state.angle * 180) / Math.PI)}°`, angleLabelX, angleLabelY + (isCompactView() ? 34 : 40));
   ctx.restore();
 }
 

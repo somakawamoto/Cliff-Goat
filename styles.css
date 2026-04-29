@@ -378,18 +378,51 @@ button {
 
 @media (max-width: 760px) {
   .game-shell {
-    min-height: 620px;
+    min-height: 100dvh;
   }
 
   .hud-score {
-    width: 138px;
-    padding: 10px 12px;
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    width: 118px;
+    padding: 8px 10px;
+  }
+
+  .hud-score strong {
+    font-size: 34px;
+  }
+
+  .hud-score b {
+    font-size: 22px;
+  }
+
+  .meter {
+    height: 8px;
+    margin: 6px 0 9px;
   }
 
   .hud-goats {
-    right: 78px;
-    padding: 10px 12px;
-    min-width: 100px;
+    top: max(8px, env(safe-area-inset-top));
+    right: calc(max(8px, env(safe-area-inset-right)) + 56px);
+    min-width: 92px;
+    padding: 8px 10px;
+  }
+
+  .hud-goats strong {
+    font-size: 30px;
+  }
+
+  .miss-label {
+    margin-top: 4px;
+    padding-top: 4px;
+    font-size: 12px;
+  }
+
+  .round-button {
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    width: 48px;
+    font-size: 28px;
   }
 
   .paper,
@@ -398,16 +431,90 @@ button {
   }
 
   .next-card {
-    width: 132px;
-    bottom: 86px;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 58px);
+    width: 112px;
+    padding: 8px;
+  }
+
+  .next-card h2 {
+    margin-bottom: 5px;
+    font-size: 15px;
+  }
+
+  .badge {
+    right: 8px;
+    bottom: 9px;
+    width: 30px;
+    font-size: 17px;
   }
 
   .power-wrap {
-    width: calc(100vw - 24px);
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: calc(100vw - 16px);
     min-width: 0;
+    height: 46px;
+    gap: 8px;
+    padding: 7px 10px;
+    font-size: 16px;
+  }
+
+  .power-track {
+    height: 24px;
+    border-width: 2px;
+  }
+
+  .power-track::after {
+    top: -5px;
+    height: 34px;
+    width: 4px;
   }
 
   .sign {
     display: none;
+  }
+
+  .result-card {
+    padding: 20px;
+  }
+
+  .result-card dl div {
+    font-size: 18px;
+  }
+
+  .result-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 390px) {
+  .hud-score {
+    width: 108px;
+  }
+
+  .hud-score strong {
+    font-size: 30px;
+  }
+
+  .hud-score b {
+    font-size: 19px;
+  }
+
+  .hud-goats {
+    min-width: 84px;
+    right: calc(max(6px, env(safe-area-inset-right)) + 50px);
+    padding: 7px 8px;
+  }
+
+  .hud-goats strong {
+    font-size: 26px;
+  }
+
+  .round-button {
+    width: 44px;
+  }
+
+  .next-card {
+    width: 100px;
   }
 }
