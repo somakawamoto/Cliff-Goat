@@ -2,10 +2,11 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const nextCanvas = document.getElementById("nextGoat");
 const nextCtx = nextCanvas.getContext("2d");
+const ASSET_VERSION = "20260430-1";
 const goatImage = new Image();
-const goatSound = new Audio("assets/goat_sound.mp3");
+const goatSound = new Audio(`assets/goat_sound.mp3?v=${ASSET_VERSION}`);
 goatSound.preload = "auto";
-const bgm = new Audio("assets/Happy_Street.mp3");
+const bgm = new Audio(`assets/Happy_Street.mp3?v=${ASSET_VERSION}`);
 bgm.loop = true;
 bgm.preload = "auto";
 bgm.autoplay = true;
@@ -15,7 +16,7 @@ let cannonImageReady = false;
 cannonImage.onload = () => {
   cannonImageReady = true;
 };
-cannonImage.src = "assets/cannon.png";
+cannonImage.src = `assets/cannon.png?v=${ASSET_VERSION}`;
 let goatImageReady = false;
 let goatSprite = null;
 
@@ -250,7 +251,7 @@ goatImage.onerror = () => {
 };
 
 function loadGoatImage() {
-  goatImage.src = "assets/goat.png";
+  goatImage.src = `assets/goat.png?v=${ASSET_VERSION}`;
 }
 
 function buildGoatSprite(image) {
