@@ -5,6 +5,17 @@ const nextCtx = nextCanvas.getContext("2d");
 const goatImage = new Image();
 const goatSound = new Audio("assets/goat_sound.mp3");
 goatSound.preload = "auto";
+const bgm = new Audio("assets/Happy_Street.mp3");
+bgm.loop = true;
+bgm.preload = "auto";
+bgm.autoplay = true;
+bgm.volume = 0.34;
+const cannonImage = new Image();
+let cannonImageReady = false;
+cannonImage.onload = () => {
+  cannonImageReady = true;
+};
+cannonImage.src = "assets/cannon.png";
 let goatImageReady = false;
 let goatSprite = null;
 
@@ -14,6 +25,7 @@ const els = {
   score: document.getElementById("score"),
   remaining: document.getElementById("remaining"),
   powerBar: document.getElementById("powerBar"),
+  misses: document.getElementById("misses"),
   combo: document.getElementById("combo"),
   lastBonus: document.getElementById("lastBonus"),
   bestCoverage: document.getElementById("bestCoverage"),
@@ -30,13 +42,13 @@ const els = {
   menuButton: document.getElementById("menuButton"),
 };
 
-const TOTAL_GOATS = 15;
-const GRAVITY = 430;
-const POWER_MIN = 980;
-const POWER_MAX = 2050;
+const GRAVITY = 340;
+const POWER_MIN = 520;
+const POWER_MAX = 3300;
 const STORAGE_KEY = "cliff-goat-best";
 
 let audioContext = null;
+let bgmStarted = false;
 
 function audio() {
   if (!audioContext) {
@@ -44,6 +56,15 @@ function audio() {
   }
   if (audioContext.state === "suspended") audioContext.resume();
   return audioContext;
+}
+
+function startBgm() {
+  if (bgmStarted) return;
+  bgmStarted = true;
+  if (bgm.currentTime === 0) bgm.currentTime = 0;
+  bgm.play().catch(() => {
+    bgmStarted = false;
+  });
 }
 
 function tone(frequency, duration, type = "sine", volume = 0.16, when = 0) {
@@ -198,9 +219,9 @@ const state = {
   cliffArea: 1,
   occupiedArea: 0,
   goats: [],
+  misses: 0,
   projectile: null,
   nextGoat: null,
-  remaining: TOTAL_GOATS,
   score: 0,
   combo: 0,
   coverage: 0,
@@ -381,6 +402,24 @@ function cannon() {
   return { x: state.w * 0.5, y: state.h * 0.86 };
 }
 
+function cannonImageSize() {
+  const cannonH = Math.min(230, state.h * 0.27);
+  const aspect = cannonImageReady ? cannonImage.width / cannonImage.height : 1024 / 1536;
+  return { w: cannonH * aspect, h: cannonH };
+}
+
+function cannonMuzzle() {
+  const c = cannon();
+  const size = cannonImageSize();
+  const pivotY = size.h * 0.68;
+  const muzzleY = size.h * 0.11;
+  const distance = pivotY - muzzleY;
+  return {
+    x: c.x + Math.cos(state.angle) * distance,
+    y: c.y - Math.sin(state.angle) * distance,
+  };
+}
+
 function rollGoat() {
   const sizeRoll = rand();
   const rareRoll = rand();
@@ -393,9 +432,9 @@ function rollGoat() {
   else if (rareRoll > 0.9) rare = "rare";
 
   const dims = {
-    S: { w: 64, h: 42, score: 80 },
-    M: { w: 84, h: 55, score: 100 },
-    L: { w: 112, h: 72, score: 150 },
+    S: { w: 52, h: 34, score: 80 },
+    M: { w: 68, h: 44, score: 100 },
+    L: { w: 90, h: 58, score: 150 },
   }[size];
   return {
     size,
@@ -411,9 +450,9 @@ function rollGoat() {
 function reset() {
   rand = mulberry32(state.seed);
   state.goats = [];
+  state.misses = 0;
   state.projectile = null;
   state.nextGoat = rollGoat();
-  state.remaining = TOTAL_GOATS;
   state.score = 0;
   state.combo = 0;
   state.coverage = 0;
@@ -436,7 +475,8 @@ function updateHud() {
   els.coverage.textContent = `${state.coverage.toFixed(1)}%`;
   els.coverageBar.style.width = `${Math.min(100, state.coverage)}%`;
   els.score.textContent = `${state.score.toLocaleString()} pt`;
-  els.remaining.textContent = state.remaining;
+  els.remaining.textContent = state.goats.length;
+  els.misses.textContent = state.misses;
   els.powerBar.style.width = `${Math.round(state.power * 100)}%`;
   els.combo.textContent = state.combo;
   els.bestCoverage.textContent = `${Number(localStorage.getItem(STORAGE_KEY) || 0).toFixed(1)}%`;
@@ -450,14 +490,15 @@ function drawNextGoat() {
   grad.addColorStop(1, "#3a271c");
   nextCtx.fillStyle = grad;
   nextCtx.fillRect(0, 0, 220, 170);
-  drawGoat(nextCtx, 112, 88, g, -0.08, 1.7);
+  drawGoat(nextCtx, 112, 88, g, -0.08, 1);
   els.nextBadge.textContent = g.size;
   els.nextBadge.style.background = g.rare === "gold" ? "#d5a300" : g.rare === "rare" ? "#7a3fe0" : "#cf1e22";
 }
 
 function startCharge() {
-  if (state.gameOver || state.projectile || state.remaining <= 0) return;
+  if (state.gameOver || state.projectile) return;
   audio();
+  startBgm();
   playSound("charge");
   state.charging = true;
   state.power = 0;
@@ -467,11 +508,12 @@ function startCharge() {
 function fire() {
   if (!state.charging || state.gameOver || state.projectile) return;
   state.charging = false;
-  const c = cannon();
-  const power = POWER_MIN + state.power * (POWER_MAX - POWER_MIN);
+  const muzzle = cannonMuzzle();
+  const powerCurve = state.power ** 1.55;
+  const power = POWER_MIN + powerCurve * (POWER_MAX - POWER_MIN);
   state.projectile = {
-    x: c.x,
-    y: c.y - 40,
+    x: muzzle.x,
+    y: muzzle.y,
     vx: Math.cos(state.angle) * power,
     vy: -Math.sin(state.angle) * power,
     rot: -state.angle,
@@ -497,8 +539,8 @@ function update(dt) {
   }
 
   if (!state.charging) {
-    const minA = Math.PI * 0.24;
-    const maxA = Math.PI * 0.76;
+    const minA = Math.PI / 18;
+    const maxA = Math.PI * 17 / 18;
     state.angle += state.angleDir * dt * 1.25;
     if (state.angle > maxA) {
       state.angle = maxA;
@@ -517,7 +559,10 @@ function update(dt) {
     p.y += p.vy * dt;
     p.rot += p.goat.spin * dt;
     const collisionArmed = p.age > 0.18 && p.y < state.h * 0.78;
-    if (collisionArmed && pointInPolygon(p.x, p.y, state.cliff)) {
+    const flewTooFar = p.y < -160 || p.x < -160 || p.x > state.w + 160;
+    if (flewTooFar) {
+      failGoat("飛びすぎて落下");
+    } else if (collisionArmed && pointInPolygon(p.x, p.y, state.cliff)) {
       stickGoat(p);
     } else if (p.y > state.h + 100 || p.x < -120 || p.x > state.w + 120) {
       failGoat("崖に届かず落下");
@@ -588,7 +633,6 @@ function stickGoat(projectile) {
     return;
   }
 
-  state.remaining -= 1;
   state.goats.push({ x, y, goat, rot, verdict: verdict.overlap });
   state.projectile = null;
   state.combo += 1;
@@ -613,7 +657,6 @@ function stickGoat(projectile) {
   state.messageTimer = 1.6;
   els.lastBonus.innerHTML = `隣接ボーナス<br />+${adjacentBonus.toLocaleString()} pt`;
   recalcCoverage();
-  if (state.remaining <= 0) endGame();
 }
 
 function nearbyGoats(x, y, goat) {
@@ -629,13 +672,13 @@ function rockMultiplierAt(x, y) {
 }
 
 function failGoat(message) {
-  state.remaining -= 1;
+  state.misses += 1;
   state.projectile = null;
   state.combo = 0;
   state.message = message;
   state.messageTimer = 1.5;
   playSound("fail");
-  if (state.remaining <= 0) endGame();
+  if (state.misses >= 3) endGame();
 }
 
 function recalcCoverage() {
@@ -663,7 +706,7 @@ function endGame() {
   els.resultCoverage.textContent = `${state.coverage.toFixed(1)}%`;
   els.resultRank.textContent = rank;
   els.resultScore.textContent = `${state.score.toLocaleString()} pt`;
-  els.resultPlaced.textContent = `${state.goats.length} / ${TOTAL_GOATS}`;
+  els.resultPlaced.textContent = `${state.goats.length} 匹`;
   els.result.hidden = false;
   updateHud();
 }
@@ -769,6 +812,25 @@ function drawRockAttributes() {
 }
 
 function drawCannon() {
+  if (cannonImageReady) {
+    drawCannonImage();
+    return;
+  }
+  drawCannonFallback();
+}
+
+function drawCannonImage() {
+  const c = cannon();
+  const { w: cannonW, h: cannonH } = cannonImageSize();
+  const pivotY = cannonH * 0.68;
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(-state.angle + Math.PI / 2);
+  ctx.drawImage(cannonImage, -cannonW / 2, -pivotY, cannonW, cannonH);
+  ctx.restore();
+}
+
+function drawCannonFallback() {
   const c = cannon();
   ctx.save();
   ctx.translate(c.x, c.y);
@@ -804,21 +866,24 @@ function drawAim() {
   ctx.lineWidth = 3;
   ctx.setLineDash([9, 8]);
   ctx.beginPath();
-  ctx.arc(c.x, c.y - 34, 134, Math.PI * 1.04, Math.PI * 1.96);
+  ctx.arc(c.x, c.y, 134, Math.PI * 1.04, Math.PI * 1.96);
   ctx.stroke();
   ctx.setLineDash([]);
-  const endX = c.x + Math.cos(state.angle) * 108;
-  const endY = c.y - Math.sin(state.angle) * 108;
-  ctx.fillStyle = "#ffdf24";
-  for (let i = 1; i <= 3; i++) {
-    ctx.beginPath();
-    ctx.arc(c.x + (endX - c.x) * i / 3, c.y + (endY - c.y) * i / 3 - 32, 10 + i * 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  const muzzle = cannonMuzzle();
+  const endX = muzzle.x + Math.cos(state.angle) * 108;
+  const endY = muzzle.y - Math.sin(state.angle) * 108;
+  ctx.strokeStyle = "rgba(255, 224, 36, 0.95)";
+  ctx.lineWidth = 5;
+  ctx.setLineDash([12, 10]);
+  ctx.beginPath();
+  ctx.moveTo(muzzle.x, muzzle.y);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
+  ctx.setLineDash([]);
   ctx.font = "900 28px system-ui";
   ctx.fillText("角度", c.x + 45, c.y - 132);
   ctx.font = "900 40px system-ui";
-  ctx.fillText(`${Math.round((state.angle * 180) / Math.PI)}°`, c.x + 45, c.y - 92);
+  ctx.fillText(`${Math.round(180 - (state.angle * 180) / Math.PI)}°`, c.x + 45, c.y - 92);
   ctx.restore();
 }
 
@@ -972,7 +1037,7 @@ function exportImage() {
   ctx.fillText(`崖埋め率 ${state.coverage.toFixed(1)}%`, 54, 82);
   ctx.fillStyle = "#fff";
   ctx.font = "800 26px system-ui";
-  ctx.fillText(`ランク ${rank}   スコア ${state.score.toLocaleString()}   配置 ${state.goats.length}/${TOTAL_GOATS}`, 54, 130);
+  ctx.fillText(`ランク ${rank}   スコア ${state.score.toLocaleString()}   配置 ${state.goats.length}匹`, 54, 130);
   ctx.fillText("全国132位", 54, 164);
   ctx.restore();
 
@@ -1025,4 +1090,5 @@ els.menuButton.addEventListener("click", () => {
 resize();
 reset();
 loadGoatImage();
+startBgm();
 requestAnimationFrame(loop);
