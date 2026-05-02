@@ -177,21 +177,37 @@ button {
   position: absolute;
   left: max(16px, env(safe-area-inset-left));
   bottom: max(18px, env(safe-area-inset-bottom));
-  min-width: clamp(64px, 6vw, 92px);
-  min-height: clamp(38px, 4.4vw, 52px);
-  padding: 7px 12px;
+  width: clamp(46px, 5.2vw, 64px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 5px;
   border: 2px solid rgba(255, 255, 255, 0.7);
   border-radius: 8px;
-  color: white;
   background: rgba(20, 20, 20, 0.82);
   box-shadow: 0 7px 20px rgba(0, 0, 0, 0.32);
-  font-size: clamp(14px, 1.6vw, 20px);
-  font-weight: 900;
 }
 
 .sound-button[aria-pressed="false"] {
-  color: rgba(255, 255, 255, 0.82);
   background: rgba(20, 20, 20, 0.58);
+}
+
+.sound-button img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .paper,
@@ -475,10 +491,8 @@ button {
   .sound-button {
     left: max(8px, env(safe-area-inset-left));
     bottom: calc(max(10px, env(safe-area-inset-bottom)) + 54px);
-    min-width: 58px;
-    min-height: 34px;
-    padding: 5px 8px;
-    font-size: 12px;
+    width: 42px;
+    padding: 4px;
   }
 
   .paper,
@@ -575,8 +589,7 @@ button {
   }
 
   .sound-button {
-    min-width: 54px;
-    font-size: 11px;
+    width: 40px;
   }
 
   .next-card {

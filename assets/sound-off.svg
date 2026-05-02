@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sound off">
+  <rect width="64" height="64" rx="14" fill="#17130e"/>
+  <path d="M10 26h10l16-13v38L20 38H10z" fill="#ffe349" stroke="#fff4a6" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M43 25l12 14" fill="none" stroke="#ff6b5d" stroke-width="6" stroke-linecap="round"/>
+  <path d="M55 25L43 39" fill="none" stroke="#ff6b5d" stroke-width="6" stroke-linecap="round"/>
+</svg>

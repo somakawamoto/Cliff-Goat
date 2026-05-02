@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>崖ヤギ</title>
-    <link rel="stylesheet" href="styles.css?v=20260503-1" />
+    <link rel="stylesheet" href="styles.css?v=20260503-2" />
   </head>
   <body>
     <main class="game-shell">
@@ -39,7 +39,10 @@
       </section>
 
       <button id="menuButton" class="round-button" aria-label="メニュー">☰</button>
-      <button id="soundButton" class="sound-button" type="button" aria-label="音をオフ" aria-pressed="true">音 ON</button>
+      <button id="soundButton" class="sound-button" type="button" aria-label="音をオフ" aria-pressed="true">
+        <img id="soundIcon" src="assets/sound-on.svg?v=20260503-1" alt="" />
+        <span id="soundLabel" class="visually-hidden">音 ON</span>
+      </button>
 
       <section class="next-card">
         <h2>NEXT ヤギ</h2>
@@ -70,6 +73,6 @@
       </div>
     </main>
 
-    <script src="game.js?v=20260503-1"></script>
+    <script src="game.js?v=20260503-2"></script>
   </body>
 </html>

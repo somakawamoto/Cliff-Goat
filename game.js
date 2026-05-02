@@ -46,6 +46,8 @@ const els = {
   shareButton: document.getElementById("shareButton"),
   menuButton: document.getElementById("menuButton"),
   soundButton: document.getElementById("soundButton"),
+  soundIcon: document.getElementById("soundIcon"),
+  soundLabel: document.getElementById("soundLabel"),
 };
 
 const GRAVITY = 340;
@@ -229,7 +231,8 @@ function playGoatSound() {
 }
 
 function updateSoundButton() {
-  els.soundButton.textContent = soundEnabled ? "音 ON" : "音 OFF";
+  els.soundIcon.src = soundEnabled ? "assets/sound-on.svg?v=20260503-1" : "assets/sound-off.svg?v=20260503-1";
+  els.soundLabel.textContent = soundEnabled ? "音 ON" : "音 OFF";
   els.soundButton.setAttribute("aria-pressed", String(soundEnabled));
   els.soundButton.setAttribute("aria-label", soundEnabled ? "音をオフ" : "音をオン");
 }
