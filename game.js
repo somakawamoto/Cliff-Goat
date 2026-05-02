@@ -3,14 +3,18 @@ const ctx = canvas.getContext("2d");
 const nextCanvas = document.getElementById("nextGoat");
 const nextCtx = nextCanvas.getContext("2d");
 const ASSET_VERSION = "20260430-3";
+const SOUND_STORAGE_KEY = "cliff-goat-sound";
+let soundEnabled = localStorage.getItem(SOUND_STORAGE_KEY) !== "off";
 const goatImage = new Image();
 const goatSound = new Audio(`assets/goat_sound.mp3?v=${ASSET_VERSION}`);
 goatSound.preload = "auto";
+goatSound.muted = !soundEnabled;
 const bgm = new Audio(`assets/Happy_Street.mp3?v=${ASSET_VERSION}`);
 bgm.loop = true;
 bgm.preload = "auto";
 bgm.autoplay = true;
 bgm.volume = 0.34;
+bgm.muted = !soundEnabled;
 const cannonImage = new Image();
 let cannonImageReady = false;
 cannonImage.onload = () => {
@@ -41,6 +45,7 @@ const els = {
   retryButton: document.getElementById("retryButton"),
   shareButton: document.getElementById("shareButton"),
   menuButton: document.getElementById("menuButton"),
+  soundButton: document.getElementById("soundButton"),
 };
 
 const GRAVITY = 340;
@@ -56,6 +61,7 @@ function isCompactView() {
 }
 
 function audio() {
+  if (!soundEnabled) return null;
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
@@ -64,6 +70,7 @@ function audio() {
 }
 
 function startBgm() {
+  if (!soundEnabled) return;
   if (bgmStarted) return;
   bgmStarted = true;
   if (bgm.currentTime === 0) bgm.currentTime = 0;
@@ -74,6 +81,7 @@ function startBgm() {
 
 function tone(frequency, duration, type = "sine", volume = 0.16, when = 0) {
   const ac = audio();
+  if (!ac) return;
   const osc = ac.createOscillator();
   const gain = ac.createGain();
   const start = ac.currentTime + when;
@@ -90,6 +98,7 @@ function tone(frequency, duration, type = "sine", volume = 0.16, when = 0) {
 
 function noise(duration, volume = 0.12, when = 0) {
   const ac = audio();
+  if (!ac) return;
   const bufferSize = Math.max(1, Math.floor(ac.sampleRate * duration));
   const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
   const data = buffer.getChannelData(0);
@@ -109,6 +118,7 @@ function noise(duration, volume = 0.12, when = 0) {
 
 function bleat(when = 0, volume = 0.13) {
   const ac = audio();
+  if (!ac) return;
   const osc = ac.createOscillator();
   const nasal = ac.createOscillator();
   const cheer = ac.createOscillator();
@@ -183,6 +193,7 @@ function bleat(when = 0, volume = 0.13) {
 }
 
 function playSound(name) {
+  if (!soundEnabled) return;
   try {
     if (name === "charge") {
       tone(220, 0.06, "triangle", 0.06);
@@ -209,11 +220,34 @@ function playSound(name) {
 }
 
 function playGoatSound() {
+  if (!soundEnabled) return;
   audio();
   goatSound.currentTime = 0;
   goatSound.play().catch(() => {
     bleat(0, 0.12);
   });
+}
+
+function updateSoundButton() {
+  els.soundButton.textContent = soundEnabled ? "音 ON" : "音 OFF";
+  els.soundButton.setAttribute("aria-pressed", String(soundEnabled));
+  els.soundButton.setAttribute("aria-label", soundEnabled ? "音をオフ" : "音をオン");
+}
+
+function setSoundEnabled(enabled) {
+  soundEnabled = enabled;
+  localStorage.setItem(SOUND_STORAGE_KEY, enabled ? "on" : "off");
+  goatSound.muted = !enabled;
+  bgm.muted = !enabled;
+  if (enabled) {
+    if (audioContext?.state === "suspended") audioContext.resume();
+    startBgm();
+  } else {
+    bgm.pause();
+    bgmStarted = false;
+    if (audioContext?.state === "running") audioContext.suspend();
+  }
+  updateSoundButton();
 }
 
 const state = {
@@ -468,7 +502,7 @@ function reset() {
   state.angle = Math.PI / 2;
   state.angleDir = 1;
   state.gameOver = false;
-  state.message = "長押しで角度とパワーを合わせろ";
+  state.message = "長押しで角度とパワーを調整して\nヤギを貼り付けろ！";
   state.messageTimer = 2.4;
   els.result.hidden = true;
   makeCliff();
@@ -1004,14 +1038,20 @@ function drawMessage() {
   if (state.messageTimer <= 0 || !state.message) return;
   ctx.save();
   ctx.globalAlpha = Math.min(1, state.messageTimer);
-  ctx.font = `900 ${Math.max(20, Math.min(36, state.w * 0.028))}px system-ui`;
+  const fontSize = Math.max(20, Math.min(36, state.w * 0.028));
+  const lineHeight = fontSize * 1.22;
+  const lines = state.message.split("\n");
+  ctx.font = `900 ${fontSize}px system-ui`;
   ctx.textAlign = "center";
   ctx.lineWidth = 8;
   ctx.strokeStyle = "rgba(0,0,0,0.7)";
   ctx.fillStyle = "#ffe349";
-  const messageY = state.h * (isCompactView() ? 0.28 : 0.26);
-  ctx.strokeText(state.message, state.w / 2, messageY);
-  ctx.fillText(state.message, state.w / 2, messageY);
+  const messageY = state.h * (isCompactView() ? 0.28 : 0.26) - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, index) => {
+    const y = messageY + index * lineHeight;
+    ctx.strokeText(line, state.w / 2, y);
+    ctx.fillText(line, state.w / 2, y);
+  });
   ctx.restore();
 }
 
@@ -1103,9 +1143,13 @@ els.menuButton.addEventListener("click", () => {
   state.message = "長押し / Space で発射";
   state.messageTimer = 1.6;
 });
+els.soundButton.addEventListener("click", () => {
+  setSoundEnabled(!soundEnabled);
+});
 
 resize();
 reset();
 loadGoatImage();
+updateSoundButton();
 startBgm();
 requestAnimationFrame(loop);

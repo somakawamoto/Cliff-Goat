@@ -4,19 +4,33 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>崖ヤギ</title>
-    <link rel="stylesheet" href="styles.css?v=20260430-3" />
+    <link rel="stylesheet" href="styles.css?v=20260503-1" />
   </head>
   <body>
     <main class="game-shell">
       <canvas id="game" aria-label="崖ヤギゲーム画面"></canvas>
 
-      <section class="hud hud-score" aria-live="polite">
-        <span class="label">占有率</span>
-        <strong id="coverage">0.0%</strong>
-        <span class="meter"><i id="coverageBar"></i></span>
-        <span class="label">スコア</span>
-        <b id="score">0 pt</b>
-      </section>
+      <div class="left-hud-stack">
+        <section class="hud hud-score" aria-live="polite">
+          <span class="label">占有率</span>
+          <strong id="coverage">0.0%</strong>
+          <span class="meter"><i id="coverageBar"></i></span>
+          <span class="label">スコア</span>
+          <b id="score">0 pt</b>
+        </section>
+
+        <section class="paper daily">
+          <p>ベスト: <b id="bestCoverage">0.0%</b></p>
+          <p>ランキング: <b id="rank">132</b>位</p>
+        </section>
+
+        <section class="hud combo" id="comboPanel">
+          <span class="label">コンボ</span>
+          <strong><span id="combo">0</span><small>連続!</small></strong>
+          <hr />
+          <span id="lastBonus">隣接ボーナス<br />+0 pt</span>
+        </section>
+      </div>
 
       <section class="hud hud-goats">
         <span class="label">貼付ヤギ</span>
@@ -25,18 +39,7 @@
       </section>
 
       <button id="menuButton" class="round-button" aria-label="メニュー">☰</button>
-
-      <section class="paper daily">
-        <p>ベスト: <b id="bestCoverage">0.0%</b></p>
-        <p>ランキング: <b id="rank">132</b>位</p>
-      </section>
-
-      <section class="hud combo" id="comboPanel">
-        <span class="label">コンボ</span>
-        <strong><span id="combo">0</span><small>連続!</small></strong>
-        <hr />
-        <span id="lastBonus">隣接ボーナス<br />+0 pt</span>
-      </section>
+      <button id="soundButton" class="sound-button" type="button" aria-label="音をオフ" aria-pressed="true">音 ON</button>
 
       <section class="next-card">
         <h2>NEXT ヤギ</h2>
@@ -48,8 +51,6 @@
         <span>パワー</span>
         <div class="power-track"><i id="powerBar"></i></div>
       </div>
-
-      <p class="sign">落ちたら終了</p>
 
       <div id="result" class="result" hidden>
         <section class="result-card">
@@ -69,6 +70,6 @@
       </div>
     </main>
 
-    <script src="game.js?v=20260430-3"></script>
+    <script src="game.js?v=20260503-1"></script>
   </body>
 </html>
