@@ -394,6 +394,7 @@ function resize() {
   ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
   makeCliff();
   recalcCoverage();
+  updateHud();
 }
 
 function makeCliff() {
@@ -517,11 +518,24 @@ function updateHud() {
   els.coverage.textContent = `${state.coverage.toFixed(1)}%`;
   els.coverageBar.style.width = `${Math.min(100, state.coverage)}%`;
   els.score.textContent = `${state.score.toLocaleString()} pt`;
+  fitHudValue(els.coverage, 20);
+  fitHudValue(els.score, 16);
   els.remaining.textContent = state.goats.length;
   els.misses.textContent = state.misses;
   els.powerBar.style.width = `${Math.round(state.power * 100)}%`;
   els.combo.textContent = state.combo;
   els.bestCoverage.textContent = `${Number(localStorage.getItem(STORAGE_KEY) || 0).toFixed(1)}%`;
+}
+
+function fitHudValue(element, minFontSize) {
+  element.style.fontSize = "";
+  const available = element.clientWidth;
+  if (!available) return;
+  const naturalWidth = element.scrollWidth;
+  if (naturalWidth <= available) return;
+  const fontSize = parseFloat(getComputedStyle(element).fontSize);
+  const fittedSize = Math.max(minFontSize, Math.floor((fontSize * available) / naturalWidth));
+  element.style.fontSize = `${fittedSize}px`;
 }
 
 function drawNextGoat() {

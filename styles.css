@@ -81,6 +81,7 @@ button {
 .hud-score {
   width: clamp(154px, 16vw, 240px);
   padding: 12px 16px 14px;
+  overflow: hidden;
 }
 
 .label {
@@ -92,16 +93,26 @@ button {
 
 .hud-score strong {
   display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  white-space: nowrap;
   color: var(--gold);
   font-size: clamp(40px, 5vw, 76px);
   line-height: 0.95;
   letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .hud-score b {
   display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  white-space: nowrap;
   font-size: clamp(28px, 3vw, 46px);
   line-height: 1.05;
+  font-variant-numeric: tabular-nums;
 }
 
 .meter {
@@ -335,17 +346,6 @@ button {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.power-track::after {
-  content: "";
-  position: absolute;
-  left: 64%;
-  top: -5px;
-  width: 5px;
-  height: 40px;
-  background: white;
-  border-radius: 4px;
-}
-
 .sign {
   left: calc(max(18px, env(safe-area-inset-left)) + clamp(154px, 16vw, 240px) + 18px);
   bottom: calc(max(18px, env(safe-area-inset-bottom)) + 66px);
@@ -532,12 +532,6 @@ button {
   .power-track {
     height: 24px;
     border-width: 2px;
-  }
-
-  .power-track::after {
-    top: -5px;
-    height: 34px;
-    width: 4px;
   }
 
   .sign {
