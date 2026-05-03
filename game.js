@@ -55,6 +55,9 @@ const POWER_MIN = 520;
 const POWER_MAX = 3300;
 const STORAGE_KEY = "cliff-goat-best";
 const BASE_CLIFF_AREA = 465000;
+const GOAT_SIZE_SCALE = 0.86;
+const COVERAGE_GOAT_SCALE_X = 1.75;
+const COVERAGE_GOAT_SCALE_Y = 2.2;
 
 let audioContext = null;
 let bgmStarted = false;
@@ -517,7 +520,7 @@ function rollGoat() {
     M: { w: 68, h: 44, score: 100 },
     L: { w: 90, h: 58, score: 150 },
   }[size];
-  const scale = state.gameScale;
+  const scale = state.gameScale * GOAT_SIZE_SCALE;
   return {
     size,
     rare,
@@ -704,14 +707,22 @@ function estimateOverlap(x, y, goat, rot) {
 }
 
 function pointInGoat(x, y, placed) {
+  return pointInGoatShape(x, y, placed, 1, 1);
+}
+
+function pointInCoverageGoat(x, y, placed) {
+  return pointInGoatShape(x, y, placed, COVERAGE_GOAT_SCALE_X, COVERAGE_GOAT_SCALE_Y);
+}
+
+function pointInGoatShape(x, y, placed, scaleX, scaleY) {
   const dx = x - placed.x;
   const dy = y - placed.y;
   const cos = Math.cos(-placed.rot);
   const sin = Math.sin(-placed.rot);
   const lx = dx * cos - dy * sin;
   const ly = dx * sin + dy * cos;
-  const rx = placed.goat.w / 2;
-  const ry = placed.goat.h / 2;
+  const rx = (placed.goat.w * scaleX) / 2;
+  const ry = (placed.goat.h * scaleY) / 2;
   const body = (lx * lx) / (rx * rx) + (ly * ly) / (ry * ry) <= 1;
   const head = ((lx - rx * 0.52) ** 2) / ((rx * 0.34) ** 2) + ((ly + ry * 0.04) ** 2) / ((ry * 0.46) ** 2) <= 1;
   return body || head;
@@ -785,10 +796,10 @@ function recalcCoverage() {
     for (let x = 0; x < state.w; x += sample) {
       if (!pointInPolygon(x, y, state.cliff)) continue;
       cliff++;
-      if (state.goats.some((g) => pointInGoat(x, y, g))) occupied++;
+      if (state.goats.some((g) => pointInCoverageGoat(x, y, g))) occupied++;
     }
   }
-      state.coverage = cliff ? Math.min(100, (occupied / cliff) * 620) : 0;
+  state.coverage = cliff ? Math.min(100, (occupied / cliff) * 100) : 0;
   state.occupiedArea = occupied * sample * sample;
 }
 
