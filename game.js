@@ -1145,6 +1145,9 @@ window.addEventListener("keydown", (event) => {
   if (event.code === "Space") {
     event.preventDefault();
     if (!state.charging) startCharge();
+  } else {
+    state.message = "クリック/スペース 長押しで発射";
+    state.messageTimer = 1.6;
   }
 });
 window.addEventListener("keyup", (event) => {
@@ -1157,7 +1160,7 @@ window.addEventListener("keyup", (event) => {
 els.retryButton.addEventListener("click", reset);
 els.shareButton.addEventListener("click", exportImage);
 els.menuButton.addEventListener("click", () => {
-  state.message = "長押し / Space で発射";
+  state.message = "クリック/スペース 長押しで発射";
   state.messageTimer = 1.6;
 });
 els.soundButton.addEventListener("click", () => {
