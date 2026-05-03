@@ -54,6 +54,7 @@ const GRAVITY = 340;
 const POWER_MIN = 520;
 const POWER_MAX = 3300;
 const STORAGE_KEY = "cliff-goat-best";
+const BASE_CLIFF_AREA = 465000;
 
 let audioContext = null;
 let bgmStarted = false;
@@ -257,6 +258,7 @@ const state = {
   w: 0,
   h: 0,
   dpr: 1,
+  gameScale: 1,
   cliff: [],
   cliffArea: 1,
   occupiedArea: 0,
@@ -384,6 +386,9 @@ function mulberry32(seed) {
 let rand = mulberry32(state.seed);
 
 function resize() {
+  const oldW = state.w || window.innerWidth;
+  const oldH = state.h || window.innerHeight;
+  const oldScale = state.gameScale || 1;
   state.dpr = Math.min(window.devicePixelRatio || 1, 2);
   state.w = Math.floor(window.innerWidth);
   state.h = Math.floor(window.innerHeight);
@@ -393,31 +398,63 @@ function resize() {
   canvas.style.height = `${state.h}px`;
   ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
   makeCliff();
+  scaleGameObjects(oldW, oldH, oldScale);
   recalcCoverage();
   updateHud();
+}
+
+function scaleGameObjects(oldW, oldH, oldScale) {
+  if (!oldW || !oldH) return;
+  const xRatio = state.w / oldW;
+  const yRatio = state.h / oldH;
+  const sizeRatio = state.gameScale / oldScale;
+  for (const placed of state.goats) {
+    placed.x *= xRatio;
+    placed.y *= yRatio;
+    scaleGoatSize(placed.goat, sizeRatio);
+  }
+  if (state.projectile) {
+    state.projectile.x *= xRatio;
+    state.projectile.y *= yRatio;
+    state.projectile.vx *= sizeRatio;
+    state.projectile.vy *= sizeRatio;
+    scaleGoatSize(state.projectile.goat, sizeRatio);
+  }
+  if (state.nextGoat) scaleGoatSize(state.nextGoat, sizeRatio);
 }
 
 function makeCliff() {
   const w = state.w;
   const h = state.h;
   const top = h * 0.02;
-  const bottom = h * (isCompactView() ? 0.82 : 0.88);
-  const leftBase = w * (isCompactView() ? 0.03 : 0.08);
-  const rightBase = w * (isCompactView() ? 0.98 : 0.94);
+  const bottom = h * 0.86;
+  const leftBase = w * 0.07;
+  const rightBase = w * 0.95;
   const points = [];
   const steps = 16;
+  const noiseScale = estimatedGameScale(w, h);
   for (let i = 0; i <= steps; i++) {
     const y = top + ((bottom - top) * i) / steps;
-    const noise = Math.sin(i * 1.71 + state.seed) * 26 + Math.sin(i * 0.53) * 18;
+    const noise = (Math.sin(i * 1.71 + state.seed) * 26 + Math.sin(i * 0.53) * 18) * noiseScale;
     points.push({ x: leftBase + noise - (i / steps) * w * 0.04, y });
   }
   for (let i = steps; i >= 0; i--) {
     const y = top + ((bottom - top) * i) / steps;
-    const noise = Math.cos(i * 1.23 + state.seed) * 20 + Math.sin(i * 0.91) * 15;
+    const noise = (Math.cos(i * 1.23 + state.seed) * 20 + Math.sin(i * 0.91) * 15) * noiseScale;
     points.push({ x: rightBase + noise + (i / steps) * w * 0.025, y });
   }
   state.cliff = points;
   state.cliffArea = polygonArea(points);
+  state.gameScale = Math.max(0.72, Math.min(1.65, Math.sqrt(state.cliffArea / BASE_CLIFF_AREA)));
+}
+
+function estimatedGameScale(w, h) {
+  return Math.max(0.72, Math.min(1.65, Math.sqrt((w * h * 0.74) / BASE_CLIFF_AREA)));
+}
+
+function scaleGoatSize(goat, ratio) {
+  goat.w *= ratio;
+  goat.h *= ratio;
 }
 
 function polygonArea(points) {
@@ -442,11 +479,12 @@ function pointInPolygon(x, y, points) {
 }
 
 function cannon() {
-  return { x: state.w * 0.5, y: state.h * (isCompactView() ? 0.84 : 0.86) };
+  return { x: state.w * 0.5, y: state.h * 0.86 };
 }
 
 function cannonImageSize() {
-  const cannonH = Math.min(isCompactView() ? 165 : 230, state.h * (isCompactView() ? 0.22 : 0.27));
+  const baseH = isCompactView() ? 165 : 230;
+  const cannonH = Math.min(baseH * state.gameScale, state.h * (isCompactView() ? 0.22 : 0.27));
   const aspect = cannonImageReady ? cannonImage.width / cannonImage.height : 1024 / 1536;
   return { w: cannonH * aspect, h: cannonH };
 }
@@ -479,11 +517,12 @@ function rollGoat() {
     M: { w: 68, h: 44, score: 100 },
     L: { w: 90, h: 58, score: 150 },
   }[size];
+  const scale = state.gameScale;
   return {
     size,
     rare,
-    w: dims.w,
-    h: dims.h,
+    w: dims.w * scale,
+    h: dims.h * scale,
     baseScore: dims.score,
     pose: rand() * Math.PI * 2,
     spin: (rand() > 0.5 ? 1 : -1) * (5.5 + rand() * 3.5),
@@ -495,7 +534,6 @@ function reset() {
   state.goats = [];
   state.misses = 0;
   state.projectile = null;
-  state.nextGoat = rollGoat();
   state.score = 0;
   state.combo = 0;
   state.coverage = 0;
@@ -510,6 +548,7 @@ function reset() {
   state.messageTimer = 2.4;
   els.result.hidden = true;
   makeCliff();
+  state.nextGoat = rollGoat();
   updateHud();
   drawNextGoat();
 }
@@ -566,7 +605,7 @@ function fire() {
   state.charging = false;
   const muzzle = cannonMuzzle();
   const powerCurve = state.power ** 1.55;
-  const power = POWER_MIN + powerCurve * (POWER_MAX - POWER_MIN);
+  const power = (POWER_MIN + powerCurve * (POWER_MAX - POWER_MIN)) * state.gameScale;
   state.projectile = {
     x: muzzle.x,
     y: muzzle.y,
@@ -610,17 +649,18 @@ function update(dt) {
   if (state.projectile) {
     const p = state.projectile;
     p.age += dt;
-    p.vy += GRAVITY * dt;
+    p.vy += GRAVITY * state.gameScale * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     p.rot += p.goat.spin * dt;
-    const collisionArmed = p.age > 0.18 && p.y < state.h * (isCompactView() ? 0.73 : 0.78);
-    const flewTooFar = p.y < -160 || p.x < -160 || p.x > state.w + 160;
+    const collisionArmed = p.age > 0.18 && p.y < state.h * 0.76;
+    const margin = 160 * state.gameScale;
+    const flewTooFar = p.y < -margin || p.x < -margin || p.x > state.w + margin;
     if (flewTooFar) {
       failGoat("飛びすぎて落下");
     } else if (collisionArmed && pointInPolygon(p.x, p.y, state.cliff)) {
       stickGoat(p);
-    } else if (p.y > state.h + 100 || p.x < -120 || p.x > state.w + 120) {
+    } else if (p.y > state.h + 100 * state.gameScale || p.x < -120 * state.gameScale || p.x > state.w + 120 * state.gameScale) {
       failGoat("崖に届かず落下");
     }
   }
@@ -650,7 +690,7 @@ function goatMaskPoints(x, y, goat, rot, step = 8) {
 }
 
 function estimateOverlap(x, y, goat, rot) {
-  const pts = goatMaskPoints(x, y, goat, rot, 7);
+  const pts = goatMaskPoints(x, y, goat, rot, 7 * state.gameScale);
   let occupied = 0;
   let onCliff = 0;
   for (const pt of pts) {
@@ -738,7 +778,7 @@ function failGoat(message) {
 }
 
 function recalcCoverage() {
-  const sample = Math.max(8, Math.min(14, state.w / 120));
+  const sample = Math.max(6, Math.min(14, 9 * state.gameScale));
   let cliff = 0;
   let occupied = 0;
   for (let y = 0; y < state.h * 0.9; y += sample) {
