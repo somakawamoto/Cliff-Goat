@@ -9,6 +9,9 @@ const goatImage = new Image();
 const goatSound = new Audio(`assets/goat_sound.mp3?v=${ASSET_VERSION}`);
 goatSound.preload = "auto";
 goatSound.muted = !soundEnabled;
+const failSound = new Audio(`assets/fail.mp3?v=${ASSET_VERSION}`);
+failSound.preload = "auto";
+failSound.muted = !soundEnabled;
 const bgm = new Audio(`assets/Happy_Street.mp3?v=${ASSET_VERSION}`);
 bgm.loop = true;
 bgm.preload = "auto";
@@ -213,8 +216,7 @@ function playSound(name) {
       playGoatSound();
       tone(1180, 0.08, "sine", 0.08, 0.16);
     } else if (name === "fail") {
-      tone(180, 0.18, "sawtooth", 0.12);
-      tone(90, 0.24, "square", 0.09, 0.12);
+      playFailSound();
     } else if (name === "result") {
       tone(392, 0.1, "triangle", 0.11);
       tone(523, 0.1, "triangle", 0.11, 0.09);
@@ -234,6 +236,15 @@ function playGoatSound() {
   });
 }
 
+function playFailSound() {
+  if (!soundEnabled) return;
+  failSound.currentTime = 0;
+  failSound.play().catch(() => {
+    tone(180, 0.18, "sawtooth", 0.12);
+    tone(90, 0.24, "square", 0.09, 0.12);
+  });
+}
+
 function updateSoundButton() {
   els.soundIcon.src = soundEnabled ? "assets/sound-on.svg?v=20260503-1" : "assets/sound-off.svg?v=20260503-1";
   els.soundLabel.textContent = soundEnabled ? "音 ON" : "音 OFF";
@@ -245,6 +256,7 @@ function setSoundEnabled(enabled) {
   soundEnabled = enabled;
   localStorage.setItem(SOUND_STORAGE_KEY, enabled ? "on" : "off");
   goatSound.muted = !enabled;
+  failSound.muted = !enabled;
   bgm.muted = !enabled;
   if (enabled) {
     if (audioContext?.state === "suspended") audioContext.resume();
