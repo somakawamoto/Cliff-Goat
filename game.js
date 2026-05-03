@@ -51,7 +51,7 @@ const els = {
 };
 
 const GRAVITY = 340;
-const POWER_MIN = 520;
+const POWER_MIN = 320;
 const POWER_MAX = 3300;
 const STORAGE_KEY = "cliff-goat-best";
 const BASE_CLIFF_AREA = 465000;
