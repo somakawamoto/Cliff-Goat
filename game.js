@@ -838,7 +838,8 @@ function rankFor(value) {
   return "C";
 }
 
-function draw() {
+function draw(options = {}) {
+  const includeMessage = options.includeMessage ?? true;
   ctx.clearRect(0, 0, state.w, state.h);
   drawSkyAndGround();
   drawCliff();
@@ -849,7 +850,7 @@ function draw() {
   }
   drawCannon();
   drawAim();
-  drawMessage();
+  if (includeMessage) drawMessage();
 }
 
 function drawSkyAndGround() {
@@ -1154,7 +1155,7 @@ function loop(ts) {
 }
 
 function exportImage() {
-  draw();
+  draw({ includeMessage: false });
   const rank = rankFor(state.coverage);
   ctx.save();
   ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
